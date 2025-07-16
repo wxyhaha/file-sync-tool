@@ -50,7 +50,7 @@ See `requirements.txt` for complete dependency list
 
 1. **Clone or download the project**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/wxyhaha/file-sync-tool.git
    cd sync-tool
    ```
 
