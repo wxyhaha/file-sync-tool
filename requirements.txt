@@ -1,0 +1,60 @@
+# GUI框架
+tkinter-tooltip==2.2.0
+
+# 图像处理（用于托盘图标）
+Pillow==10.0.1
+
+# 系统托盘支持
+pystray==0.19.4
+
+# 文件监控（可选，用于自动同步）
+watchdog==3.0.0
+
+# 进度条和UI增强
+ttkthemes==3.2.2
+
+# 配置文件处理
+pyyaml==6.0.1
+
+# 系统信息获取
+psutil==5.9.6
+
+# 打包工具
+pyinstaller==6.1.0
+
+# 开发和测试工具
+pytest==7.4.3
+pytest-cov==4.1.0
+flake8==6.1.0
+black==23.11.0
+
+# Windows特定依赖
+pywin32==306; sys_platform == "win32"
+
+# 加密和哈希
+cryptography==41.0.7
+
+# 日志增强
+coloredlogs==15.0.1
+
+# 文件操作增强
+send2trash==1.8.2
+
+# 网络和HTTP（用于更新检查等）
+requests==2.31.0
+
+# 时间处理
+python-dateutil==2.8.2
+
+# JSON处理增强
+orjson==3.9.10
+
+# 系统路径处理
+pathlib2==2.3.7.post1
+
+# 多线程和异步
+threading-utils==0.3
+
+# 文件类型检测
+python-magic==0.4.27; sys_platform != "win32"
+python-magic-bin==0.4.14; sys_platform == "win32"

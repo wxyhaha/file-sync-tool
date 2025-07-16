@@ -1,0 +1,44 @@
+# 构建产物
+dist/
+build/
+*.spec
+version_info.txt
+
+# 日志文件
+logs/
+*.log
+
+# 临时文件
+temp/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 配置文件（运行时生成）
+sync_config.json
+sync_configs.json
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Python虚拟环境
+venv/
+env/
+.env
+
+# 测试覆盖率
+.coverage
+htmlcov/
+
+# 打包文件
+*.egg-info/
+dist/
+build/
