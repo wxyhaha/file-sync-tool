@@ -29,19 +29,35 @@ def check_pyinstaller():
 
 def create_spec_file():
     """创建PyInstaller规格文件"""
-    spec_content = '''
-# -*- mode: python ; coding: utf-8 -*-
+    # 构建datas列表
+    datas_lines = [
+        "        ('assets', 'assets'),",
+        "        ('README.md', '.'),"
+    ]
+    
+    # 如果sync_config.json存在，则包含它
+    if os.path.exists('sync_config.json'):
+        datas_lines.append("        ('sync_config.json', '.'),")
+        print("检测到sync_config.json文件，将包含在打包中")
+    else:
+        print("未检测到sync_config.json文件，跳过打包")
+    
+    # 移除最后一个逗号
+    if datas_lines:
+        datas_lines[-1] = datas_lines[-1].rstrip(',')
+    
+    datas_content = '\n'.join(datas_lines)
+    
+    spec_content = f'''# -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
 
 a = Analysis(
-    ['main.py'],
+    ['sync_gui.py'],
     pathex=[],
     binaries=[],
     datas=[
-        ('assets', 'assets'),
-        ('sync_config.json', '.'),
-        ('README.md', '.'),
+{datas_content}
     ],
     hiddenimports=[
         'PIL._tkinter_finder',
@@ -53,7 +69,7 @@ a = Analysis(
         'tkinter.scrolledtext',
     ],
     hookspath=[],
-    hooksconfig={},
+    hooksconfig={{}},
     runtime_hooks=[],
     excludes=[],
     win_no_prefer_redirects=False,
@@ -304,7 +320,7 @@ def main():
     print("=" * 40)
     
     # 检查当前目录
-    if not os.path.exists('main.py'):
+    if not os.path.exists('sync_gui.py'):
         print("错误: 请在项目根目录运行此脚本")
         return 1
     

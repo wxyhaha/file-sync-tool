@@ -3,6 +3,7 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext, simpledialog
 import threading
 import json
 import os
+import sys
 from datetime import datetime
 import pystray
 from PIL import Image
@@ -424,23 +425,44 @@ class SyncToolGUI:
         self.is_minimized_to_tray = True
         self.create_tray_icon()
         
+    def create_default_tray_icon(self):
+        """创建默认托盘图标"""
+        from PIL import ImageDraw, ImageFont
+        
+        # 创建32x32的图标
+        image = Image.new('RGBA', (32, 32), (0, 0, 0, 0))  # 透明背景
+        draw = ImageDraw.Draw(image)
+        
+        # 绘制蓝色圆形背景
+        draw.ellipse([2, 2, 30, 30], fill=(0, 120, 215, 255), outline=(255, 255, 255, 255), width=1)
+        
+        # 绘制同步箭头图标
+        # 上箭头
+        draw.polygon([(16, 8), (12, 12), (14, 12), (14, 16), (18, 16), (18, 12), (20, 12)], fill=(255, 255, 255, 255))
+        # 下箭头
+        draw.polygon([(16, 24), (20, 20), (18, 20), (18, 16), (14, 16), (14, 20), (12, 20)], fill=(255, 255, 255, 255))
+        
+        return image
+        
     def create_tray_icon(self):
         """创建托盘图标"""
         try:
-            # 尝试加载自定义图标
-            icon_path = None
-            for path in ["assets/icon.ico", "assets/icon.png", "icon.ico"]:
-                if os.path.exists(path):
-                    icon_path = path
-                    break
+            # 创建托盘图标
+            image = self.create_default_tray_icon()
             
-            if icon_path:
-                image = Image.open(icon_path)
-                # 调整图标大小
-                image = image.resize((32, 32), Image.Resampling.LANCZOS)
-            else:
-                # 创建默认图标
-                image = Image.new('RGBA', (32, 32), (0, 120, 215, 255))  # Windows蓝色
+            # 如果在开发环境中，尝试加载自定义图标
+            if not getattr(sys, 'frozen', False):
+                icon_path = None
+                possible_paths = ["assets/icon.ico", "assets/icon.png", "icon.ico"]
+                
+                for path in possible_paths:
+                    if os.path.exists(path):
+                        try:
+                            image = Image.open(path)
+                            image = image.resize((32, 32), Image.Resampling.LANCZOS)
+                            break
+                        except Exception:
+                            continue
                 
             menu = pystray.Menu(
                 pystray.MenuItem("显示窗口", self.show_window, default=True),
@@ -458,9 +480,9 @@ class SyncToolGUI:
             )
             
             # 在新线程中运行托盘图标
-            tray_thread = threading.Thread(target=self.tray_icon.run)
-            tray_thread.daemon = True
-            tray_thread.start()
+            self.tray_thread = threading.Thread(target=self.tray_icon.run)
+            self.tray_thread.daemon = True
+            self.tray_thread.start()
             
             self.add_log("托盘图标创建成功")
             
@@ -480,9 +502,18 @@ class SyncToolGUI:
         self.root.lift()
         self.root.focus_force()  # 强制获取焦点
         self.is_minimized_to_tray = False
-        if self.tray_icon:
+        
+        # 停止托盘图标和线程
+        if hasattr(self, 'tray_icon') and self.tray_icon:
             self.tray_icon.stop()
             self.tray_icon = None
+        
+        # 等待托盘线程结束
+        if hasattr(self, 'tray_thread') and self.tray_thread and self.tray_thread.is_alive():
+            try:
+                self.tray_thread.join(timeout=1)  # 最多等待1秒
+            except Exception:
+                pass
             
     def tray_start_sync(self, icon=None, item=None):
         """从托盘启动同步"""
@@ -491,15 +522,49 @@ class SyncToolGUI:
             
     def quit_app(self, icon=None, item=None):
         """退出应用"""
-        if self.tray_icon:
-            self.tray_icon.stop()
-            self.tray_icon = None
-        self.root.quit()
-        self.root.destroy()
+        try:
+            # 停止同步进程
+            if hasattr(self, 'is_syncing') and self.is_syncing:
+                self.is_syncing = False
+            
+            # 停止托盘图标
+            if hasattr(self, 'tray_icon') and self.tray_icon:
+                self.tray_icon.stop()
+                self.tray_icon = None
+            
+            # 等待托盘线程结束
+            if hasattr(self, 'tray_thread') and self.tray_thread and self.tray_thread.is_alive():
+                try:
+                    self.tray_thread.join(timeout=2)  # 最多等待2秒
+                except Exception:
+                    pass
+            
+            # 记录退出日志
+            if hasattr(self, 'logger'):
+                self.logger.info("程序正在退出...")
+            
+            # 强制退出主循环
+            if hasattr(self, 'root') and self.root:
+                self.root.quit()
+                self.root.destroy()
+            
+            # 强制退出进程
+            import sys
+            sys.exit(0)
+            
+        except Exception as e:
+            print(f"退出时发生错误: {e}")
+            # 强制退出
+            import os
+            os._exit(0)
         
     def on_closing(self):
         """窗口关闭事件"""
-        if messagebox.askokcancel("退出", "确定要退出程序吗？"):
+        try:
+            if messagebox.askokcancel("退出", "确定要退出程序吗？"):
+                self.quit_app()
+        except Exception:
+            # 如果对话框失败，直接退出
             self.quit_app()
             
     def run(self):
